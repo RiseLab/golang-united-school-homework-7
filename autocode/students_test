@@ -2,6 +2,9 @@ package coverage
 
 import (
 	"os"
+	"reflect"
+	"testing"
+	"time"
 )
 
 // DO NOT EDIT THIS FUNCTION
@@ -17,4 +20,122 @@ func init() {
 }
 
 // WRITE YOUR CODE BELOW
+func TestPeople_Len(t *testing.T) {
+	person := Person{}
+	var people People = []Person{person}
+	if people.Len() != 1 {
+		t.Errorf("the expected length is 1, but actual %d", people.Len())
+	}
+}
 
+func TestPeople_Less(t *testing.T) {
+	person := Person{"John", "Smith", time.Now()}
+	var people People = []Person{person, person}
+	if people.Less(0, 1) != false {
+		t.Error("the expected result is false, but actual true")
+	}
+	people[0].firstName = "Jake"
+	if people.Less(0, 1) != true {
+		t.Error("the expected result is true, but actual false")
+	}
+	people[0].birthDay = people[0].birthDay.Add(-1 * time.Hour)
+	if people.Less(0, 1) != false {
+		t.Error("the expected result is false, but actual true")
+	}
+}
+
+func TestPeople_Swap(t *testing.T) {
+	first := Person{"John", "Smith", time.Now()}
+	second := Person{"Jake", "Smith", time.Now()}
+	var people People = []Person{first, second}
+	if people.Swap(0, 1); people[0] != second || people[1] != first {
+		t.Error("elements not swapped correctly")
+	}
+}
+
+func TestNewMatrix(t *testing.T) {
+	type mTest struct {
+		str        string
+		rows, cols int
+		data       []int
+		hasError   bool
+	}
+
+	mTests := []mTest{
+		{"1 2 3\n4 5 6", 2, 3, []int{1, 2, 3, 4, 5, 6}, false},
+		{"1 2 3", 1, 3, []int{1, 2, 3}, false},
+		{"1", 1, 1, []int{1}, false},
+		{"", 0, 0, nil, true},
+		{"1 2 d", 0, 0, nil, true},
+		{"1 2 3\n4 5", 0, 0, nil, true},
+	}
+
+	for _, mt := range mTests {
+		m, err := New(mt.str)
+		if !mt.hasError {
+			if m.rows != mt.rows {
+				t.Errorf("matrix rows number is incorrect, expected %d but actual is %d", mt.rows, m.rows)
+			}
+			if m.cols != mt.cols {
+				t.Errorf("matrix cols number is incorrect, expected %d but actual is %d", mt.cols, m.cols)
+			}
+			if !reflect.DeepEqual(m.data, mt.data) {
+				t.Errorf("matrix data is incorrect, expected %v but actual is %v", mt.data, m.data)
+			}
+			if err != nil {
+				t.Errorf("received unexpected error %v", err)
+			}
+		} else {
+			if m != nil {
+				t.Errorf("expected to get nil, but actual is %v", m)
+			}
+			if err == nil {
+				t.Errorf("expected to get an error")
+			}
+		}
+	}
+}
+
+func TestMatrix_Rows(t *testing.T) {
+	m, _ := New("1 2 3\n4 5 6")
+	testResult := [][]int{{1, 2, 3}, {4, 5, 6}}
+	if !reflect.DeepEqual(m.Rows(), testResult) {
+		t.Errorf("wrong result, expected %v but actual is %v", testResult, m.Rows())
+	}
+}
+
+func TestMatrix_Cols(t *testing.T) {
+	m, _ := New("1 2 3\n4 5 6")
+	testResult := [][]int{{1, 4}, {2, 5}, {3, 6}}
+	if !reflect.DeepEqual(m.Cols(), testResult) {
+		t.Errorf("wrong result, expected %v but actual is %v", testResult, m.Cols())
+	}
+}
+
+func TestMatrix_Set(t *testing.T) {
+	type mTest struct {
+		inStr, outStr string
+		row, col, val int
+		res           bool
+	}
+
+	mTests := []mTest{
+		{"1 2 3", "1 5 3", 0, 1, 5, true},
+		{"1 2 3", "1 2 3", -1, 1, 5, false},
+		{"1 2 3", "1 2 3", 1, 1, 5, false},
+		{"1 2 3", "1 2 3", 0, -1, 5, false},
+		{"1 2 3", "1 2 3", 0, 3, 5, false},
+	}
+
+	for _, mt := range mTests {
+		mIn, _ := New(mt.inStr)
+		mOut, _ := New(mt.outStr)
+		res := mIn.Set(mt.row, mt.col, mt.val)
+		if res != mt.res {
+			t.Errorf("wrong result, expected %t but actual is %t", mt.res, res)
+		}
+		if !reflect.DeepEqual(mIn, mOut) {
+			t.Errorf("resulting matrix is incorrect, expected %v but actual is %v", mOut, mIn)
+		}
+	}
+}
